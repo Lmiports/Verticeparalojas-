@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VÉRTICE - Clientes</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #020617; --sidebar: #000000; --card: #0f172a;
+            --accent: #3b82f6; --text: #f8fafc; --muted: #94a3b8;
+            --border: #1e293b; --success: #10b981; --danger: #ef4444;
+        }
+        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; display: flex; min-height: 100vh; }
+        
+        .sidebar { width: 260px; background: var(--sidebar); height: 100vh; border-right: 1px solid var(--border); position: fixed; padding: 30px 20px; box-sizing: border-box; }
+        .brand { font-weight: 800; font-size: 22px; color: var(--accent); letter-spacing: 2px; }
+        .nav-item { display: flex; align-items: center; padding: 12px; color: var(--muted); text-decoration: none; border-radius: 8px; margin-top: 10px; transition: 0.3s; }
+        .nav-item:hover { background: #1a1a1a; color: white; }
+        .nav-item.active { background: var(--accent); color: white; }
+
+        .content { margin-left: 260px; padding: 40px; width: calc(100% - 260px); }
+        .grid { display: grid; grid-template-columns: 350px 1fr; gap: 30px; }
+        
+        .card { background: var(--card); padding: 25px; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        h2 { font-size: 16px; margin-top: 0; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px; }
+
+        label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; font-weight: bold; }
+        input { background: #020617; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px; width: 100%; margin-bottom: 15px; box-sizing: border-box; outline: none; transition: 0.3s; }
+        input:focus { border-color: var(--accent); }
+        
+        .btn { background: var(--accent); color: white; border: none; padding: 14px; border-radius: 8px; width: 100%; font-weight: 800; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
+        .btn:hover { background: #2563eb; transform: translateY(-2px); }
+        
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; color: var(--muted); font-size: 11px; padding: 12px; border-bottom: 1px solid var(--border); }
+        td { padding: 15px 12px; border-bottom: 1px solid var(--border); font-size: 14px; }
+        
+        .badge-user { background: rgba(59, 130, 246, 0.1); color: var(--accent); padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; }
+        .btn-del { color: var(--danger); cursor: pointer; background: none; border: none; font-size: 16px; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="brand">VÉRTICE</div>
+    <div style="font-size: 10px; color: var(--muted); margin-bottom: 40px; font-weight: bold;">GESTÃO INTELIGENTE</div>
+    
+    <a href="index.html" class="nav-item"><i class="fas fa-chart-line"></i>&nbsp;&nbsp; Dashboard</a>
+    <a href="vendas.html" class="nav-item"><i class="fas fa-cash-register"></i>&nbsp;&nbsp; PDV Vendas</a>
+    <a href="estoque.html" class="nav-item"><i class="fas fa-boxes"></i>&nbsp;&nbsp; Estoque</a>
+    <a href="clientes.html" class="nav-item active"><i class="fas fa-user-friends"></i>&nbsp;&nbsp; Clientes</a>
+</div>
+
+<div class="content">
+    <div class="grid">
+        <div class="card">
+            <h2><i class="fas fa-user-plus"></i> Novo Cadastro</h2>
+            
+            <label>Nome do Cliente</label>
+            <input type="text" id="cNome" placeholder="Ex: João Silva">
+            
+            <label>WhatsApp / Telefone</label>
+            <input type="text" id="cTel" placeholder="(00) 00000-0000">
+            
+            <label>CPF ou CNPJ (Opcional)</label>
+            <input type="text" id="cDoc" placeholder="000.000.000-00">
+            
+            <button class="btn" onclick="salvarCliente()">Salvar Cliente</button>
+        </div>
+
+        <div class="card">
+            <h2><i class="fas fa-users"></i> Base de Clientes</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Contato</th>
+                        <th>Documento</th>
+                        <th style="text-align: right;">Ação</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaClientes"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    let clientes = JSON.parse(localStorage.getItem('clientes_lm')) || [];
+
+    function salvarCliente() {
+        const nome = document.getElementById('cNome').value;
+        const tel = document.getElementById('cTel').value;
+        const doc = document.getElementById('cDoc').value;
+
+        if(!nome) {
+            alert("O nome do cliente é essencial para o sistema.");
+            return;
+        }
+
+        clientes.push({
+            id: Date.now(),
+            nome: nome,
+            tel: tel,
+            doc: doc
+        });
+
+        localStorage.setItem('clientes_lm', JSON.stringify(clientes));
+        
+        // Limpar campos
+        document.getElementById('cNome').value = '';
+        document.getElementById('cTel').value = '';
+        document.getElementById('cDoc').value = '';
+        
+        renderizar();
+    }
+
+    function excluir(id) {
+        if(confirm("Remover este cliente da base de dados?")) {
+            clientes = clientes.filter(c => c.id !== id);
+            localStorage.setItem('clientes_lm', JSON.stringify(clientes));
+            renderizar();
+        }
+    }
+
+    function renderizar() {
+        const tbody = document.getElementById('tabelaClientes');
+        tbody.innerHTML = '';
+        
+        if(clientes.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:30px;">Nenhum cliente cadastrado.</td></tr>';
+            return;
+        }
+
+        clientes.forEach(c => {
+            tbody.innerHTML += `
+                <tr>
+                    <td><span class="badge-user">${c.nome}</span></td>
+                    <td>${c.tel || '---'}</td>
+                    <td style="color:var(--muted)">${c.doc || '---'}</td>
+                    <td style="text-align: right;">
+                        <button class="btn-del" onclick="excluir(${c.id})"><i class="fas fa-user-minus"></i></button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    window.onload = renderizar;
+</script>
+</body>
+</html>
