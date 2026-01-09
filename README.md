@@ -1,2 +1,3 @@
-# Verticeparalojas-
-Vertice gestão inteligente 
+# V
+verticeparalojas-
+vertice gestão inteligente 
