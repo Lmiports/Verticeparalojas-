@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VÉRTICE - Frente de Caixa</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #020617; --sidebar: #000000; --card: #0f172a;
+            --accent: #3b82f6; --text: #f8fafc; --muted: #94a3b8;
+            --border: #1e293b; --success: #10b981; --warning: #f59e0b; --danger: #ef4444;
+        }
+        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; display: flex; min-height: 100vh; }
+        
+        /* Sidebar */
+        .sidebar { width: 260px; background: var(--sidebar); height: 100vh; border-right: 1px solid var(--border); position: fixed; padding: 30px 20px; box-sizing: border-box; }
+        .brand { font-weight: 800; font-size: 22px; color: var(--accent); letter-spacing: 2px; }
+        .nav-item { display: flex; align-items: center; padding: 12px; color: var(--muted); text-decoration: none; border-radius: 8px; margin-top: 10px; }
+        .nav-item.active { background: var(--accent); color: white; }
+
+        .content { margin-left: 260px; padding: 30px; width: calc(100% - 260px); display: grid; grid-template-columns: 1fr 400px; gap: 25px; }
+        
+        .card { background: var(--card); padding: 20px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 20px; }
+        h2 { font-size: 14px; color: var(--accent); text-transform: uppercase; margin-bottom: 20px; letter-spacing: 1px; }
+
+        /* Lista de Seleção */
+        .search-box { background: #020617; border: 1px solid var(--border); border-radius: 8px; max-height: 300px; overflow-y: auto; }
+        .item-select { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid var(--border); cursor: pointer; transition: 0.2s; }
+        .item-select:hover { background: #1e293b; }
+
+        /* Checkout */
+        select, input { background: #020617; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px; width: 100%; margin-bottom: 15px; box-sizing: border-box; }
+        
+        .carrinho-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #1e293b; font-size: 13px; }
+        
+        .total-container { background: #070b14; padding: 20px; border-radius: 12px; margin-top: 20px; text-align: right; }
+        .total-label { color: var(--muted); font-size: 12px; font-weight: bold; }
+        .total-value { font-size: 32px; font-weight: 900; color: var(--success); display: block; }
+
+        .btn-pay { background: var(--success); color: white; border: none; padding: 18px; border-radius: 10px; width: 100%; font-weight: 800; cursor: pointer; font-size: 16px; margin-top: 15px; }
+        .btn-orc { background: var(--warning); color: black; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: 800; cursor: pointer; margin-top: 10px; }
+
+        @media print {
+            .sidebar, .config-area, .btn-pay, .btn-orc, .search-box, select, input, .nav-item, h2 { display: none !important; }
+            body { background: white; color: black; display: block; }
+            .content { margin: 0; padding: 0; width: 100%; display: block; }
+            .card { border: none; background: white; color: black; }
+            .total-value { color: black !important; }
+            .carrinho-item { border-bottom: 1px solid #ddd; color: black; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="brand">VÉRTICE</div>
+    <div style="font-size: 10px; color: var(--muted); margin-bottom: 40px; font-weight: bold;">GESTÃO INTELIGENTE</div>
+    <a href="index.html" class="nav-item"><i class="fas fa-chart-line"></i>&nbsp;&nbsp; Dashboard</a>
+    <a href="vendas.html" class="nav-item active"><i class="fas fa-cash-register"></i>&nbsp;&nbsp; PDV Vendas</a>
+    <a href="estoque.html" class="nav-item"><i class="fas fa-boxes"></i>&nbsp;&nbsp; Estoque</a>
+    <a href="clientes.html" class="nav-item"><i class="fas fa-user-friends"></i>&nbsp;&nbsp; Clientes</a>
+</div>
+
+<div class="content">
+    <div class="config-area">
+        <div class="card">
+            <h2>1. Selecionar Itens do Estoque</h2>
+            <div class="search-box" id="listaVenda"></div>
+        </div>
+        
+        <div class="card">
+            <h2>2. Aparelho na Troca</h2>
+            <input type="text" id="trocaModelo" placeholder="Modelo do aparelho recebido">
+            <input type="number" id="trocaValor" placeholder="Valor de Avaliação (R$)" oninput="atualizarTotal()">
+        </div>
+    </div>
+
+    <div class="checkout-area">
+        <div class="card" id="comprovante">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h1 style="margin: 0; font-size: 24px; color: var(--accent);">LM IMPORTS</h1>
+                <small style="color: var(--muted);">Comprovante de Pedido</small>
+            </div>
+
+            <h2>Cliente</h2>
+            <select id="selectCliente">
+                <option value="">Selecione um cliente...</option>
+            </select>
+
+            <h2>Resumo do Pedido</h2>
+            <div id="itensCarrinho"></div>
+            <div id="detalheTroca" style="color: var(--danger); font-weight: bold; margin-top: 10px; font-size: 13px;"></div>
+
+            <h2 style="margin-top:20px;">Pagamento</h2>
+            <select id="metodoPagto" onchange="toggleParcelas()">
+                <option value="Dinheiro/Pix">Dinheiro ou Pix</option>
+                <option value="Cartao">Cartão de Crédito</option>
+            </select>
+            <select id="qtdParcelas" style="display:none;" onchange="atualizarTotal()">
+                </select>
+
+            <div class="total-container">
+                <span class="total-label">VALOR FINAL</span>
+                <span class="total-value" id="totalFinal">R$ 0,00</span>
+                <small id="infoParcela" style="color: var(--warning); font-weight: bold;"></small>
+            </div>
+        </div>
+
+        <button class="btn-pay" onclick="finalizar(true)"><i class="fas fa-print"></i> FINALIZAR E IMPRIMIR</button>
+        <button class="btn-orc" onclick="window.print()"><i class="fas fa-file-invoice"></i> GERAR ORÇAMENTO</button>
+    </div>
+</div>
+
+<script>
+    let estoque = JSON.parse(localStorage.getItem('estoque_lm')) || [];
+    let clientes = JSON.parse(localStorage.getItem('clientes_lm')) || [];
+    let carrinho = [];
+
+    function init() {
+        const list = document.getElementById('listaVenda');
+        list.innerHTML = estoque.length ? '' : '<p style="padding:20px; color:var(--muted)">Estoque vazio. Cadastre produtos primeiro.</p>';
+        estoque.forEach(p => {
+            list.innerHTML += `
+                <div class="item-select" onclick="addCarrinho(${p.id})">
+                    <span>${p.produto} <small style="color:var(--muted)">(${p.detalhes})</small></span>
+                    <span style="color:var(--success); font-weight:bold;">R$ ${p.venda.toLocaleString('pt-BR')}</span>
+                </div>`;
+        });
+
+        const cliSel = document.getElementById('selectCliente');
+        clientes.forEach(c => {
+            cliSel.innerHTML += `<option value="${c.nome}">${c.nome}</option>`;
+        });
+
+        const parc = document.getElementById('qtdParcelas');
+        for(let i=1; i<=18; i++) {
+            parc.innerHTML += `<option value="${i}">${i}x no cartão</option>`;
+        }
+    }
+
+    function addCarrinho(id) {
+        const prod = estoque.find(p => p.id === id);
+        if(!carrinho.find(i => i.id === id)) {
+            carrinho.push(prod);
+            atualizarTotal();
+        }
+    }
+
+    function toggleParcelas() {
+        const isCartao = document.getElementById('metodoPagto').value === 'Cartao';
+        document.getElementById('qtdParcelas').style.display = isCartao ? 'block' : 'none';
+        atualizarTotal();
+    }
+
+    function atualizarTotal() {
+        const display = document.getElementById('itensCarrinho');
+        display.innerHTML = '';
+        let subtotal = 0;
+
+        carrinho.forEach((p, index) => {
+            subtotal += p.venda;
+            display.innerHTML += `
+                <div class="carrinho-item">
+                    <span>${p.produto}</span>
+                    <span>R$ ${p.venda.toLocaleString('pt-BR')} <i class="fas fa-times" style="color:red; cursor:pointer" onclick="remover(${index})"></i></span>
+                </div>`;
+        });
+
+        const vTroca = parseFloat(document.getElementById('trocaValor').value) || 0;
+        document.getElementById('detalheTroca').innerText = vTroca > 0 ? `(-) TROCA: R$ ${vTroca.toLocaleString('pt-BR')}` : '';
+
+        const totalFinal = subtotal - vTroca;
+        document.getElementById('totalFinal').innerText = `R$ ${totalFinal.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
+
+        if(document.getElementById('metodoPagto').value === 'Cartao') {
+            const n = document.getElementById('qtdParcelas').value;
+            document.getElementById('infoParcela').innerText = `${n}x de R$ ${(totalFinal/n).toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
+        } else {
+            document.getElementById('infoParcela').innerText = '';
+        }
+    }
+
+    function remover(i) {
+        carrinho.splice(i, 1);
+        atualizarTotal();
+    }
+
+    function finalizar(imprimir) {
+        if(!document.getElementById('selectCliente').value || carrinho.length === 0) {
+            return alert("Selecione o cliente e ao menos um produto.");
+        }
+
+        // Baixa no estoque
+        const idsNoCarrinho = carrinho.map(c => c.id);
+        const novoEstoque = estoque.filter(p => !idsNoCarrinho.includes(p.id));
+        localStorage.setItem('estoque_lm', JSON.stringify(novoEstoque));
+
+        if(imprimir) window.print();
+        alert("Venda registrada e estoque atualizado!");
+        location.reload();
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html>
